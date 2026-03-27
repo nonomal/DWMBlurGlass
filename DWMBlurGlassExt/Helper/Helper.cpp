@@ -16,6 +16,7 @@
  * If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.
 */
 #include "Helper.h"
+#include <wil.h>
 
 namespace MDWMBlurGlassExt
 {
@@ -233,6 +234,29 @@ namespace MDWMBlurGlassExt
 		return ret;
 	}
 
+	winrt::com_ptr<ID2D1Bitmap1> CreateD2DMaskBitmap(ID2D1DeviceContext* context, D2D1_SIZE_U size)
+	{
+		if (!context) return nullptr;
+
+		constexpr D2D1_PIXEL_FORMAT format =
+		{
+			DXGI_FORMAT_A8_UNORM,
+			D2D1_ALPHA_MODE_PREMULTIPLIED
+		};
+
+		D2D1_BITMAP_PROPERTIES1 bitmapProp;
+		bitmapProp.dpiX = 96;
+		bitmapProp.dpiY = 96;
+		bitmapProp.colorContext = nullptr;
+		bitmapProp.pixelFormat = format;
+		bitmapProp.bitmapOptions = D2D1_BITMAP_OPTIONS_TARGET;
+
+		winrt::com_ptr<ID2D1Bitmap1> d2dBitmap = nullptr;
+		context->CreateBitmap(size, nullptr, 0, bitmapProp, d2dBitmap.put());
+
+		return d2dBitmap;
+	}
+
 	HBITMAP CreateAlphaBitmap(int width, int height)
 	{
 		BITMAPINFOHEADER bmih = { 0 };
@@ -269,5 +293,23 @@ namespace MDWMBlurGlassExt
 	{
 		return rect1.left <= rect2.left && rect1.top <= rect2.top
 			&& rect1.right >= rect2.left && rect1.bottom >= rect2.top;
+	}
+
+	bool GetDesktopID(ULONG_PTR type, ULONG_PTR* desktopID)
+	{
+		if (static const auto pfnGetDesktopID
+		{
+			reinterpret_cast<decltype(&GetDesktopID)>(GetProcAddress(GetModuleHandleW(L"user32.dll"), "GetDesktopID"))
+		})
+		{
+			return pfnGetDesktopID(type, desktopID);
+		}
+		return false;
+	}
+
+	bool IsBatterySaverEnabled()
+	{
+		SYSTEM_POWER_STATUS powerStatus{};
+		return GetSystemPowerStatus(&powerStatus) && powerStatus.SystemStatusFlag;
 	}
 }

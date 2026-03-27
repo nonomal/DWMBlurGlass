@@ -22,6 +22,7 @@
 #include "Common.h"
 #include "../DWMBlurGlassExt/Common/DefFunctionList.h"
 #include <TlHelp32.h>
+#include "Helper/wil.h"
 
 #pragma data_seg(".DWMBlurGlassShared")
 
@@ -74,6 +75,22 @@ namespace MDWMBlurGlass
 		g_proclist = list;
 	}
 
+	bool IsEnableTransparency()
+	{
+		HKEY hKey = nullptr;
+		DWORD dwValue = 1;
+		if (RegOpenKeyExW(HKEY_CURRENT_USER, LR"(SOFTWARE\Microsoft\Windows\CurrentVersion\themes\personalize)", 0, KEY_READ, &hKey) == ERROR_SUCCESS)
+		{
+			DWORD dwType = REG_DWORD;
+			DWORD dwDataSize = sizeof(DWORD);
+
+			RegQueryValueExW(hKey, L"EnableTransparency", nullptr, &dwType, (LPBYTE)&dwValue, &dwDataSize);
+
+			RegCloseKey(hKey);
+		}
+		return dwValue;
+	}
+
 	HWND FindMessageWnd(DWORD pid)
 	{
 		if (!pid)
@@ -96,20 +113,13 @@ namespace MDWMBlurGlass
 
 	void ParsingSymbol(PSYMBOL_INFO symInfo, std::string& funName, std::string& fullName, DWORD64& offset)
 	{
-		auto functionName{ reinterpret_cast<const CHAR*>(symInfo->Name) };
+		std::string_view functionName{ symInfo->Name, symInfo->NameLen };
 
-		CHAR unDecoratedFunctionName[MAX_PATH + 1]{};
-		UnDecorateSymbolName(
-			functionName, unDecoratedFunctionName, MAX_PATH,
-			UNDNAME_COMPLETE | UNDNAME_NO_ACCESS_SPECIFIERS | UNDNAME_NO_THROW_SIGNATURES | UNDNAME_NO_ALLOCATION_LANGUAGE
-		);
-
-		fullName = unDecoratedFunctionName;
-		OutputDebugStringA((std::string(unDecoratedFunctionName) + "\n").c_str());
+		fullName = functionName;
 
 		CHAR fullyUnDecoratedFunctionName[MAX_PATH + 1]{};
 		UnDecorateSymbolName(
-			functionName, fullyUnDecoratedFunctionName, MAX_PATH,
+			functionName.data(), fullyUnDecoratedFunctionName, MAX_PATH,
 			UNDNAME_NAME_ONLY
 		);
 
@@ -194,18 +204,24 @@ namespace MDWMBlurGlass
 
 		if(auto iter = sessionList.find(sessionId); iter != sessionList.end())
 		{
+			bool retry = false;
 			//dwm进程不应启动这么频繁 这有可能是频繁崩溃 停止自动加载
 			if (!iter->second.init && steady_clock::now().time_since_epoch() - iter->second.times < 10s)
 			{
 				KillTimer(g_hostMsgWnd, g_timerID);
-				MessageBoxW(0, L"Checked that the process is suspected to have crashed abnormally and has stopped autoloading.",
-					L"DWMBlurGlass Error", MB_ICONERROR);
+				auto ret = MessageBoxW(nullptr, L"Checked that the process is suspected to have crashed abnormally and has stopped autoloading.",
+					L"DWMBlurGlass Error", MB_ICONERROR | MB_RETRYCANCEL);
 
 				iter->second.times = steady_clock::now().time_since_epoch();
-				return;
+
+				if (ret != IDRETRY)
+					return;
+				else
+					retry = true;
 			}
 			iter->second.times = steady_clock::now().time_since_epoch();
-			iter->second.init = false;
+			if(!retry)
+				iter->second.init = false;
 		}
 		else
 			sessionList.insert(std::make_pair(sessionId, sessionData()));
@@ -233,23 +249,7 @@ namespace MDWMBlurGlass
 		}
 		else if(message == WM_APP + 20 && MClientNotifyType::QueryTransparency == (MClientNotifyType)wParam)
 		{
-			HKEY hKey = nullptr;
-			DWORD dwValue = 1;
-			static DWORD lastValue = dwValue;
-			if (RegOpenKeyExW(HKEY_CURRENT_USER, LR"(SOFTWARE\Microsoft\Windows\CurrentVersion\themes\personalize)", 0, KEY_READ, &hKey) == ERROR_SUCCESS)
-			{
-				DWORD dwType = REG_DWORD;
-				DWORD dwDataSize = sizeof(DWORD);
-
-				RegQueryValueExW(hKey, L"EnableTransparency", nullptr, &dwType, (LPBYTE)&dwValue, &dwDataSize);
-
-				RegCloseKey(hKey);
-			}
-			if(dwValue != lastValue)
-			{
-				MHostNotify(MHostNotifyType::EnableTransparency, dwValue);
-				lastValue = dwValue;
-			}
+			MHostNotify(MHostNotifyType::EnableTransparency, IsEnableTransparency());
 		}
 		return DefWindowProcW(hWnd, message, wParam, lParam);
 	}

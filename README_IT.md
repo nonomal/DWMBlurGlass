@@ -3,7 +3,7 @@ Aggiunge l'effetto sfocato alla barra del titolo del sistema globale, supporta W
 
 给全局系统标题栏添加自定义效果，支持win10和win11
 #
-| [中文](/README_ZH.md) | [English](/README.md) | [italiano](/README_IT.md) | [français](/README_FR.md) | [Türkçe](/README_TR.md) | [español](/README_ES.md) | [German](/README_DE.md) 
+[中文](/README_ZH.md) | [English](/README.md) | [italiano](/README_IT.md) | [français](/README_FR.md) | [Türkçe](/README_TR.md) | [español](/README_ES.md) | [German](/README_DE.md) | [Português Brasil](/README_PTBR.md) | [עברית](/README_HE.md) | [தமிழ்](/README_TA.md) | [Tiếng Việt](/README_VI.md)
 
 This project uses [LGNU V3 license](/COPYING.LESSER).
 
@@ -168,11 +168,9 @@ Se desideri aiutarci a tradurre in altre lingue, vedi sotto per i formati dei fi
    
 
 ## Dipendenze
-* MiaoUI interface library v2 (Private)
+* [MiaoUI Lite interface library v2](https://github.com/Maplespe/MiaoUILite)
 * [AcrylicEverywhere](https://github.com/ALTaleX531/AcrylicEverywhere) - Implementazione upstream separata del metodo CustomBlur, grazie ad ALTaleX per la ricerca e il supporto.
 * [minhook](https://github.com/m417z/minhook)
 * [pugixml](https://github.com/zeux/pugixml)
 * [VC_LTL](https://github.com/Chuyu-Team/VC-LTL5)
 * [Windows Implementation Libraries](https://github.com/Microsoft/wil)
-
-Poiché il programma GUI utilizza librerie private, solo gli addetti ai lavori possono compilare la GUI, il che non influisce sulla compilazione delle librerie.

@@ -3,7 +3,8 @@ Küresel sistem başlık çubuğuna özel etkiler ekler, Windows 10 ve Windows 1
 
 给全局系统标题栏添加自定义效果，支持win10和win11
 #
-| [中文](/README_ZH.md) | [English](/README.md) | [italiano](/README_IT.md) | [français](/README_FR.md) | [Türkçe](/README_TR.md) | [español](/README_ES.md)
+[中文](/README_ZH.md) | [English](/README.md) | [italiano](/README_IT.md) | [français](/README_FR.md) | [Türkçe](/README_TR.md) | [español](/README_ES.md) | [German](/README_DE.md) | [Português Brasil](/README_PTBR.md) | [עברית](/README_HE.md) | [தமிழ்](/README_TA.md) | [Tiếng Việt](/README_VI.md)
+
 Bu proje [LGNU V3 lisansı](/COPYING.LESSER) kullanır.
 
 Diğer diller:
@@ -162,11 +163,9 @@ Başka dillere çeviri yapmamıza yardımcı olmak isterseniz, lütfen dil dosya
    
 
 ## Bağımlılıklar
-* MiaoUI arayüz kütüphanesi v2 (Gizli)
+* [MiaoUI Lite interface library v2](https://github.com/Maplespe/MiaoUILite)
 * [AcrylicEverywhere](https://github.com/ALTaleX531/AcrylicEverywhere) - CustomBlur yönteminin ayrı bir üst akım uygulaması, araştırma ve destek için ALTaleX'e teşekkürler.
 * [minhook](https://github.com/m417z/minhook)
 * [pugixml](https://github.com/zeux/pugixml)
 * [VC_LTL](https://github.com/Chuyu-Team/VC-LTL5)
 * [Windows Gerçekleme Kütüphaneleri](https://github.com/Microsoft/wil)
-
-GUI programı özel kütüphaneler kullandığı için, sadece içeriden olanlar GUI'yi derleyebilir. Bu durum kütüphanelerin derlenmesini etkilemez.

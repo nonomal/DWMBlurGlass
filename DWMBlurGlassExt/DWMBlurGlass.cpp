@@ -17,8 +17,10 @@
 */
 #include "DefFunctionList.h"
 #include "DWMBlurGlass.h"
+#include "Section/OcclusionCulling.h"
 #include "HookDef.h"
 #include <mutex>
+#include <minidumpapiset.h>
 
 namespace MDWMBlurGlassExt
 {
@@ -39,17 +41,63 @@ namespace MDWMBlurGlassExt
 	bool g_startup = false;
 
 	decltype(CreateRoundRectRgn)* g_funCreateRoundRgn = nullptr;
+	LPTOP_LEVEL_EXCEPTION_FILTER g_oldExceptionFilter = nullptr;
 
 	MinHook g_funHrgnFromRects
 	{
 		"HrgnFromRects", HrgnFromRects
 	};
 
-	//为调用DwmEnableBlurBehind的程序启用效果
-	/*MinHook g_funCWindowList_BlurBehindChange
+	LONG NTAPI TopLevelExceptionFilter(EXCEPTION_POINTERS* exceptionInfo)
 	{
-		"CWindowList::BlurBehindChange", CWindowList_BlurBehindChange
-	};*/
+		LONG result{ g_oldExceptionFilter ? g_oldExceptionFilter(exceptionInfo) : EXCEPTION_CONTINUE_SEARCH };
+		[exceptionInfo]()
+			{
+				CreateDirectoryW((Utils::GetCurrentDir() + L"\\data\\dumps").c_str(), nullptr);
+
+				std::time_t tt{ std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()) };
+				tm _tm{};
+				WCHAR time[MAX_PATH + 1];
+				localtime_s(&_tm, &tt);
+				std::wcsftime(time, MAX_PATH, L"%Y-%m-%d-%H-%M-%S", &_tm);
+
+				wil::unique_hfile fileHandle
+				{
+					CreateFile2(
+						(Utils::GetCurrentDir() +
+							std::wstring{L"\\data\\dumps\\minidump-"} + time + L".dmp"
+						).c_str(),
+						GENERIC_READ | GENERIC_WRITE,
+						FILE_SHARE_READ,
+						CREATE_ALWAYS,
+						nullptr
+					)
+				};
+				RETURN_LAST_ERROR_IF(!fileHandle.is_valid());
+
+				MINIDUMP_EXCEPTION_INFORMATION minidumpExceptionInfo{ GetCurrentThreadId(), exceptionInfo, FALSE };
+				RETURN_IF_WIN32_BOOL_FALSE(
+					MiniDumpWriteDump(
+						GetCurrentProcess(),
+						GetCurrentProcessId(),
+						fileHandle.get(),
+						static_cast<MINIDUMP_TYPE>(
+							MINIDUMP_TYPE::MiniDumpNormal |
+							MINIDUMP_TYPE::MiniDumpWithThreadInfo |
+							MINIDUMP_TYPE::MiniDumpWithUnloadedModules |
+							MINIDUMP_TYPE::MiniDumpWithProcessThreadData
+							),
+						&minidumpExceptionInfo,
+						nullptr,
+						nullptr
+					)
+				);
+
+				return S_OK;
+			} ();
+
+		return result;
+	}
 
 	bool Startup() try
 	{
@@ -58,18 +106,17 @@ namespace MDWMBlurGlassExt
 		if (g_startup) return true;
 		g_startup = true;
 
+		g_oldExceptionFilter = SetUnhandledExceptionFilter(TopLevelExceptionFilter);
+
 		MHostLoadProcOffsetList();
 
 		CDesktopManager::s_pDesktopManagerInstance = *MHostGetProcAddress<CDesktopManager*>("CDesktopManager::s_pDesktopManagerInstance");
+		CDesktopManager::s_csDwmInstance = MHostGetProcAddress<CRITICAL_SECTION>("CDesktopManager::s_csDwmInstance");
 
 		if(os::buildNumber < 22000)
 		{
 			g_funHrgnFromRects.Attach();
 		}
-		/*if(os::buildNumber >= 22000)
-		{
-			g_funCWindowList_BlurBehindChange.Attach();
-		}*/
 
 		g_CTopLevelWindow_ValidateVisual_HookDispatcher.enable_hook_routine<4, true>();
 
@@ -95,21 +142,19 @@ namespace MDWMBlurGlassExt
 	{
 		if (!g_startup) return;
 
-		/*if (os::buildNumber >= 22000)
-		{
-			g_funCWindowList_BlurBehindChange.Detach();
-		}*/
 		if (os::buildNumber < 22000)
 		{
 			g_funHrgnFromRects.Detach();
 		}
 
 		CustomButton::Detach();
+		OcclusionCulling::Detach();
 		TitleTextTweaker::Detach();
 		BlurRadiusTweaker::Detach();
 		AccentBlur::Detach();
 		CustomBackdrop::Detach();
 		DwmAPIEffect::Detach();
+		ScaleOptimizer::Detach();
 
 		g_CTopLevelWindow_ValidateVisual_HookDispatcher.enable_hook_routine<4, false>();
 
@@ -117,6 +162,22 @@ namespace MDWMBlurGlassExt
 		if(os::buildNumber < 22000)
 			WriteIAT(udwmModule, "gdi32.dll", { { "CreateRoundRectRgn", g_funCreateRoundRgn } });
 
+		// By using EnumWindows, all top-level windows are forced to trigger border recalculation (SWP_FRAMECHANGED), 
+		// ensuring that when a window is woken up (SC_RESTORE), DWM is forced to completely rebuild visual nodes 
+		// in the non-working area, preventing remnants and misalignments.
+		EnumWindows([](HWND hwnd, LPARAM) -> BOOL {
+			if (IsWindowVisible(hwnd) || IsIconic(hwnd)) {
+				SetWindowPos(hwnd, nullptr, 0, 0, 0, 0,
+					SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED | SWP_NOACTIVATE);
+			}
+			return TRUE;
+			}, 0);
+
+		if (g_oldExceptionFilter)
+		{
+			SetUnhandledExceptionFilter(g_oldExceptionFilter);
+			g_oldExceptionFilter = nullptr;
+		}
 		g_startup = false;
 
 		PostMessageW(FindWindowW(L"Dwm", nullptr), WM_THEMECHANGED, 0, 0);
@@ -139,11 +200,12 @@ namespace MDWMBlurGlassExt
 		AccentBlur::Refresh();
 		BlurRadiusTweaker::Refresh();
 		CustomButton::Refresh();
+		ScaleOptimizer::Refresh();
 
 		if (g_configData.useAccentColor)
 			RefreshAccentColor(0);
-		else
-			PostMessageW(FindWindowW(L"Dwm", nullptr), WM_THEMECHANGED, 0, 0);
+
+		PostMessageW(FindWindowW(L"Dwm", nullptr), WM_THEMECHANGED, 0, 0);
 	}
 
 	void RefreshAccentColor(COLORREF color)
@@ -151,6 +213,8 @@ namespace MDWMBlurGlassExt
 		static COLORREF lastColor = 0;
 		if(color == 0)
 		{
+			PostMessageW(FindWindowW(L"Dwm", nullptr), WM_THEMECHANGED, 0, 0);
+
 			BOOL blend = TRUE;
 			DwmGetColorizationColor(&color, &blend);
 		}
@@ -162,13 +226,11 @@ namespace MDWMBlurGlassExt
 
 		if(lastColor != color && g_configData.useAccentColor)
 		{
-			CustomBackdrop::Refresh();
-			AccentBlur::Refresh();
+			//CustomBackdrop::Refresh();
+			//AccentBlur::Refresh();
 
 			g_accentColor = color;
 			lastColor = color;
-
-			PostMessageW(FindWindowW(L"Dwm", nullptr), WM_THEMECHANGED, 0, 0);
 		}
 	}
 

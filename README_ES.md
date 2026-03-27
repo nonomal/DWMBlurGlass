@@ -3,7 +3,8 @@ Agrega efectos personalizados de desenfoque a la barra de título global del sis
 
 给全局系统标题栏添加自定义效果，支持win10和win11
 #
-| [中文](/README_ZH.md) | [English](/README.md) | [italiano](/README_IT.md) | [français](/README_FR.md) | [Türkçe](/README_TR.md) | [español](/README_ES.md)
+[中文](/README_ZH.md) | [English](/README.md) | [italiano](/README_IT.md) | [français](/README_FR.md) | [Türkçe](/README_TR.md) | [español](/README_ES.md) | [German](/README_DE.md) | [Português Brasil](/README_PTBR.md) | [עברית](/README_HE.md) | [தமிழ்](/README_TA.md) | [Tiếng Việt](/README_VI.md)
+
 Este proyecto usa la [licencia LGPL v3](/COPYING.LESSER).
 
 Otros idiomas:
@@ -160,11 +161,9 @@ Si desea ayudarnos a traducir a otros idiomas, consulte a continuación los form
 
 
 ## Dependencias
-* Biblioteca de interfaz MiaoUI v2 (privada)
+* [MiaoUI Lite interface library v2](https://github.com/Maplespe/MiaoUILite)
 * [AcrylicEverywhere](https://github.com/ALTaleX531/AcrylicEverywhere) - Implementación separada del método CustomBlur, gracias a ALTaleX por la investigación y el apoyo.
 * [minhook](https://github.com/m417z/minhook)
 * [pugixml](https://github.com/zeux/pugixml)
 * [VC_LTL](https://github.com/Chuyu-Team/VC-LTL5)
 * [Bibliotecas de implementación de Windows (WIL)](https://github.com/Microsoft/wil)
-
-Dado que la GUI usa una biblioteca privada, sólo los desarrolladores con acceso pueden compilarla, lo que no afecta la compilación de la biblioteca principal.

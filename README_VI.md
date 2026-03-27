@@ -3,7 +3,8 @@ Thêm hiệu ứng tuỳ chỉnh lên thanh tiêu đề toàn hệ thống, hỗ
 
 给全局系统标题栏添加自定义效果，支持win10和win11
 #
-| [中文](/README_ZH.md) | [English](/README.md) | [italiano](/README_IT.md) | [français](/README_FR.md) | [Türkçe](/README_TR.md) | [español](/README_ES.md) | [Tiếng Việt](/README_VI.md)
+[中文](/README_ZH.md) | [English](/README.md) | [italiano](/README_IT.md) | [français](/README_FR.md) | [Türkçe](/README_TR.md) | [español](/README_ES.md) | [German](/README_DE.md) | [Português Brasil](/README_PTBR.md) | [עברית](/README_HE.md) | [தமிழ்](/README_TA.md) | [Tiếng Việt](/README_VI.md)
+
 Dự án này sử dụng [Giấy phép LGNU V3](/COPYING.LESSER).
 
 Các ngôn ngữ khác:
@@ -172,11 +173,9 @@ Nếu bạn muốn giúp chúng tôi phiên dịch sang các ngôn ngữ khác, 
    
 
 ## Phụ thuộc
-* MiaoUI interface library v2 (Riêng tư)
+* [MiaoUI Lite interface library v2](https://github.com/Maplespe/MiaoUILite)
 * [AcrylicEverywhere](https://github.com/ALTaleX531/AcrylicEverywhere) - Phương thức upstream riêng biệt của phương pháp CustomBlur, cảm ơn ALTaleX vì nghiên cứu và hỗ trợ.
 * [minhook](https://github.com/m417z/minhook)
 * [pugixml](https://github.com/zeux/pugixml)
 * [VC_LTL](https://github.com/Chuyu-Team/VC-LTL5)
 * [Windows Implementation Libraries](https://github.com/Microsoft/wil)
-
-Vì chương trình GUI sử dụng thư viện riêng tư, chỉ người nội bộ mới có thể biên dịch GUI, điều đó không ảnh hưởng việc biên dịch thư viện.

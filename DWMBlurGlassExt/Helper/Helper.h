@@ -79,11 +79,25 @@ namespace MDWMBlurGlassExt
 		std::wstring_view filename
 	);
 
+	winrt::com_ptr<ID2D1Bitmap1> CreateD2DMaskBitmap(
+		ID2D1DeviceContext* context,
+		D2D1_SIZE_U size
+	);
+
 	HBITMAP CreateAlphaBitmap(int width, int height);
 
 	void EnumMonitors(std::vector<RECT>& monitorRects);
 
 	bool IsRectInside(const RECT& rect1, const RECT& rect2);
+
+	// type = 1, input desktop (grpdeskRitInput)
+	// type = 2, default desktop? (grpdeskIODefault)
+	// type = 3, unknown
+	// type = 4, winlogon desktop (grpdeskLogon)
+	// type = ..., desktop created by CreateDesktop?
+	bool GetDesktopID(ULONG_PTR type, ULONG_PTR* desktopID);
+
+	bool IsBatterySaverEnabled();
 
 	namespace Vtbl
 	{

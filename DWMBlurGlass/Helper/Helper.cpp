@@ -87,49 +87,20 @@ namespace MDWMBlurGlass
 		return str;
 	}
 
-	std::wstring GetSystemLocalName()
+	std::pair<std::wstring, std::wstring> GetSystemLocaleAndParent()
 	{
 		WCHAR langName[LOCALE_NAME_MAX_LENGTH];
-		if (GetLocaleInfoEx(LOCALE_NAME_USER_DEFAULT, LOCALE_SNAME, langName, LOCALE_NAME_MAX_LENGTH)) 
+		if (GetLocaleInfoEx(LOCALE_NAME_USER_DEFAULT, LOCALE_SNAME, langName, LOCALE_NAME_MAX_LENGTH))
 		{
-			return langName;
+			std::wstring locale = langName;
+			auto pos = locale.find(L'-');
+			if (pos != std::wstring::npos)
+			{
+				return { locale, std::wstring(locale.substr(0, pos)) };
+			}
+			return { locale, locale };
 		}
-		return L"en-US";
-	}
-
-	BOOL EnableHostBackdropBrush(HWND hWnd)
-	{
-		struct WINDOWCOMPOSITIONATTRIBUTEDATA
-		{
-			DWORD dwAttribute;
-			PVOID pvData;
-			SIZE_T cbData;
-		};
-		struct ACCENT_POLICY
-		{
-			DWORD AccentState;
-			DWORD AccentFlags;
-			DWORD dwGradientColor;
-			DWORD dwAnimationId;
-		};
-
-		ACCENT_POLICY policy = {};
-
-		if (os::buildNumber < 17763)
-			policy.AccentState = 3;
-		else
-			policy.AccentState = 5;
-
-		WINDOWCOMPOSITIONATTRIBUTEDATA data =
-		{
-			19,
-			&policy,
-			sizeof(policy)
-		};
-		static auto SetWindowCompositionAttribute = reinterpret_cast<BOOL(WINAPI*)(HWND, WINDOWCOMPOSITIONATTRIBUTEDATA*)>(
-			GetProcAddress(GetModuleHandleW(L"user32.dll"), "SetWindowCompositionAttribute"));
-
-		return SetWindowCompositionAttribute(hWnd, &data);
+		return { L"en-US", L"en" };
 	}
 
 	std::wstring hrToStr(HRESULT hr)
